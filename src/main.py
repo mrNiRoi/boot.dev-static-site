@@ -1,16 +1,19 @@
 import os
+import sys
 import shutil
 import functions
 from textnode import TextNode, TextType
 
 
 def main():
-    copy_recursive("static", "public")
-    generate_pages_recursive("content", "template.html", "public")
+
+    basepath = sys.argv[1] if len(sys.argv) > 1 else "/"
+
+    copy_recursive("static", "docs")
+    generate_pages_recursive("content", "template.html", "docs", basepath)
 
 
-
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath="/"):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}")
 
     with open(from_path, "r") as f:
@@ -24,6 +27,9 @@ def generate_page(from_path, template_path, dest_path):
     
     template_file = template_file.replace("{{ Title }}", title)
     template_file = template_file.replace("{{ Content }}", html_str)
+
+    template_file = template_file.replace('href="/', f'href="{basepath}')
+    template_file = template_file.replace('src="/', f'src="{basepath}')
 
     os.makedirs(os.path.dirname(dest_path), exist_ok=True)
 
@@ -54,17 +60,17 @@ def copy_recursive(fromdir, todir):
             print(f"Copying file: {fromdir_path} -> {todir_path}")
             shutil.copy(fromdir_path, todir_path)
 
-def generate_pages_recursive(dir_path_content, template_path, dest_dir_path):
+def generate_pages_recursive(dir_path_content, template_path, dest_dir_path, basepath="/"):
 
     for entry in os.listdir(dir_path_content):
         entry_path = os.path.join(dir_path_content, entry)
         dest_path = os.path.join(dest_dir_path, entry)
 
         if os.path.isdir(entry_path):
-            generate_pages_recursive(entry_path, template_path, dest_path)
+            generate_pages_recursive(entry_path, template_path, dest_path, basepath)
         elif entry_path.endswith(".md"):
             dest_file = os.path.splitext(dest_path)[0] + ".html"
-            generate_page(entry_path, template_path, dest_file)
+            generate_page(entry_path, template_path, dest_file, basepath)
 
 
 
